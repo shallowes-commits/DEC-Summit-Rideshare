@@ -6,87 +6,99 @@
 <title>DEC Summit 2026 — Rideshare Lookup</title>
 <style>
   :root {
-    --jazz-teal:    #00827F;
-    --jazz-dark:    #1A2B3C;
-    --jazz-light:   #F0F7F7;
-    --jazz-border:  #C8DCDB;
-    --arrival:      #1A7A4A;
-    --arrival-bg:   #E8F5EE;
-    --departure:    #7A3A1A;
-    --departure-bg: #F5EDE8;
-    --warn-bg:      #FFF8E1;
-    --warn-border:  #F9A825;
-    --ok-bg:        #E8F5EE;
-    --ok-border:    #1A7A4A;
+    /* Jazz Pharmaceuticals brand palette */
+    --jazz-prussian:  #001C71;   /* primary dark — header, nav */
+    --jazz-purple:    #852166;   /* primary brand accent */
+    --jazz-yellow:    #FFCF01;   /* highlight bar */
+    --jazz-french:    #5673B8;   /* French Blue — arrival accent */
+    --jazz-heading:   #5075D3;   /* interactive / link blue */
+    --jazz-slate:     #636466;   /* body text */
+    --jazz-warm:      #F7F6F4;   /* page background */
+    --jazz-pale:      #F3F6FB;   /* card / panel background */
+    --jazz-line:      #D7DCE5;   /* borders */
+    --jazz-aqua:      #39BB9D;   /* positive / all-clear accent */
+
+    /* Semantic aliases */
+    --arrival:        #5673B8;   /* French Blue */
+    --arrival-bg:     #EEF2FB;   /* pale blue */
+    --departure:      #852166;   /* Jazz Purple */
+    --departure-bg:   #F5ECF2;   /* pale purple */
+    --warn-bg:        #FFF7D6;   /* pale yellow */
+    --warn-border:    #FFCF01;
+    --ok-bg:          #E5F7F3;
+    --ok-border:      #39BB9D;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, "Arial Narrow", sans-serif; background: #f4f4f4; color: var(--jazz-dark); min-height: 100vh; }
+  body { font-family: Arial, "Arial Narrow", sans-serif; background: var(--jazz-warm); color: var(--jazz-prussian); min-height: 100vh; }
 
-  header { background: var(--jazz-dark); color: #fff; padding: 20px 32px 16px; border-bottom: 4px solid var(--jazz-teal); }
+  /* Yellow accent bar + Prussian Blue header — matches Jazz deck style */
+  header { background: var(--jazz-prussian); color: #fff; padding: 0 32px; border-bottom: none; }
+  .header-bar { height: 6px; background: linear-gradient(90deg, var(--jazz-purple) 33%, var(--jazz-yellow) 33% 66%, var(--jazz-french) 66%); }
+  .header-inner { padding: 18px 0 14px; }
   header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.02em; }
-  header p  { font-size: 0.85rem; color: #aac8c7; margin-top: 4px; }
+  header p  { font-size: 0.85rem; color: #b0bcd8; margin-top: 4px; }
 
-  .tabs { display: flex; background: #fff; border-bottom: 2px solid var(--jazz-border); padding: 0 32px; }
-  .tab-btn { padding: 12px 20px; border: none; background: none; font-size: 0.9rem; font-family: Arial, sans-serif; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color 0.15s, border-color 0.15s; }
-  .tab-btn:hover { color: var(--jazz-teal); }
-  .tab-btn.active { color: var(--jazz-teal); border-bottom-color: var(--jazz-teal); }
-  .tab-badge { display: inline-block; background: var(--jazz-teal); color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+  .tabs { display: flex; background: #fff; border-bottom: 2px solid var(--jazz-line); padding: 0 32px; }
+  .tab-btn { padding: 12px 20px; border: none; background: none; font-size: 0.9rem; font-family: Arial, sans-serif; font-weight: 600; color: var(--jazz-slate); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color 0.15s, border-color 0.15s; }
+  .tab-btn:hover { color: var(--jazz-purple); }
+  .tab-btn.active { color: var(--jazz-purple); border-bottom-color: var(--jazz-purple); }
+  .tab-badge { display: inline-block; background: var(--jazz-purple); color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
 
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  .search-section { background: #fff; padding: 20px 32px; border-bottom: 1px solid var(--jazz-border); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .search-section label { font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
-  #nameSearch { flex: 1; min-width: 220px; max-width: 400px; padding: 10px 14px; border: 2px solid var(--jazz-border); border-radius: 6px; font-size: 1rem; font-family: Arial, sans-serif; outline: none; transition: border-color 0.2s; }
-  #nameSearch:focus { border-color: var(--jazz-teal); }
-  .hint { font-size: 0.8rem; color: #777; }
-  #clearBtn { padding: 10px 18px; background: var(--jazz-teal); color: #fff; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
-  #clearBtn:hover { background: #006461; }
+  .search-section { background: #fff; padding: 20px 32px; border-bottom: 1px solid var(--jazz-line); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .search-section label { font-weight: 700; font-size: 0.95rem; white-space: nowrap; color: var(--jazz-prussian); }
+  #nameSearch { flex: 1; min-width: 220px; max-width: 400px; padding: 10px 14px; border: 2px solid var(--jazz-line); border-radius: 4px; font-size: 1rem; font-family: Arial, sans-serif; outline: none; transition: border-color 0.2s; }
+  #nameSearch:focus { border-color: var(--jazz-heading); box-shadow: 0 0 0 3px rgba(80,117,211,0.15); }
+  .hint { font-size: 0.8rem; color: var(--jazz-slate); }
+  #clearBtn { padding: 10px 18px; background: var(--jazz-purple); color: #fff; border: none; border-radius: 4px; font-size: 0.9rem; cursor: pointer; white-space: nowrap; font-family: Arial, sans-serif; font-weight: 600; }
+  #clearBtn:hover { background: #6b1a52; }
 
   main { padding: 24px 32px; }
-  #resultsLabel { font-size: 0.85rem; color: #555; margin-bottom: 16px; }
+  #resultsLabel { font-size: 0.85rem; color: var(--jazz-slate); margin-bottom: 16px; }
 
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
-  .card { background: #fff; border: 1px solid var(--jazz-border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .card { background: #fff; border: 1px solid var(--jazz-line); border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,28,113,0.08); }
   .card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; gap: 12px; }
   .card-header.arrival   { background: var(--arrival-bg);   border-bottom: 3px solid var(--arrival); }
   .card-header.departure { background: var(--departure-bg); border-bottom: 3px solid var(--departure); }
-  .direction-badge { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
+  .direction-badge { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; }
   .arrival   .direction-badge { background: var(--arrival);   color: #fff; }
   .departure .direction-badge { background: var(--departure); color: #fff; }
-  .group-id     { font-size: 0.75rem; font-weight: 700; color: #999; letter-spacing: 0.05em; }
-  .airport-badge { font-size: 1.1rem; font-weight: 700; color: var(--jazz-dark); }
+  .group-id     { font-size: 0.75rem; font-weight: 700; color: var(--jazz-slate); letter-spacing: 0.05em; }
+  .airport-badge { font-size: 1.1rem; font-weight: 700; color: var(--jazz-prussian); }
   .card-body { padding: 14px 16px; }
   .card-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-size: 0.88rem; }
   .card-row:last-child { margin-bottom: 0; }
   .card-icon  { font-size: 1rem; flex-shrink: 0; width: 20px; text-align: center; margin-top: 1px; }
-  .card-label { font-weight: 700; color: #555; min-width: 72px; flex-shrink: 0; }
-  .card-value { color: var(--jazz-dark); line-height: 1.4; }
-  .terminal-value { font-size: 1.05rem; font-weight: 700; color: var(--jazz-teal); }
+  .card-label { font-weight: 700; color: var(--jazz-slate); min-width: 72px; flex-shrink: 0; }
+  .card-value { color: var(--jazz-prussian); line-height: 1.4; }
+  .terminal-value { font-size: 1.05rem; font-weight: 700; color: var(--jazz-heading); }
   .travelers-list { line-height: 1.7; }
   .traveler-name { display: inline-block; padding: 1px 6px; border-radius: 3px; margin: 1px 2px 1px 0; font-size: 0.82rem; }
-  .traveler-name.highlight { background: #FFF176; font-weight: 700; color: #333; outline: 2px solid #F9A825; }
+  .traveler-name.highlight { background: var(--jazz-yellow); font-weight: 700; color: var(--jazz-prussian); outline: 2px solid #d4a800; }
 
   /* Gaps tab */
-  .gaps-intro { border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; font-size: 0.88rem; line-height: 1.6; }
-  .gaps-intro.all-clear { background: var(--ok-bg); border: 1px solid var(--ok-border); }
-  .gaps-intro.has-gaps  { background: var(--warn-bg); border: 1px solid var(--warn-border); }
+  .gaps-intro { border-radius: 4px; padding: 14px 18px; margin-bottom: 24px; font-size: 0.88rem; line-height: 1.6; }
+  .gaps-intro.all-clear { background: var(--ok-bg);   border: 1px solid var(--ok-border); color: #0d4a38; }
+  .gaps-intro.has-gaps  { background: var(--warn-bg); border: 1px solid #d4a800;           color: #5a4200; }
   .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-  .gap-section h3 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; padding: 8px 14px; border-radius: 6px 6px 0 0; }
+  .gap-section h3 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; padding: 8px 14px; border-radius: 4px 4px 0 0; }
   .gap-section.arrival-only   h3 { background: var(--arrival); }
   .gap-section.departure-only h3 { background: var(--departure); }
-  .gap-list { background: #fff; border: 1px solid var(--jazz-border); border-top: none; border-radius: 0 0 6px 6px; overflow: hidden; }
-  .gap-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid #eee; font-size: 0.88rem; }
+  .gap-list { background: #fff; border: 1px solid var(--jazz-line); border-top: none; border-radius: 0 0 4px 4px; overflow: hidden; }
+  .gap-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--jazz-line); font-size: 0.88rem; }
   .gap-row:last-child { border-bottom: none; }
-  .gap-row .name { flex: 1; font-weight: 600; }
-  .gap-missing { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: #FDECEA; color: #C62828; border: 1px solid #C62828; }
-  .tbc-note { font-size: 0.75rem; color: #E65100; font-weight: 600; }
+  .gap-row .name { flex: 1; font-weight: 600; color: var(--jazz-prussian); }
+  .gap-missing { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; background: #F5ECF2; color: var(--jazz-purple); border: 1px solid var(--jazz-purple); }
+  .tbc-note { font-size: 0.75rem; color: #9c3300; font-weight: 600; }
 
-  .empty-state { text-align: center; padding: 60px 20px; color: #999; grid-column: 1 / -1; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--jazz-slate); grid-column: 1 / -1; }
   .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
 
   @media (max-width: 600px) {
-    header, .search-section, main { padding: 16px; }
+    .header-inner, .search-section, main { padding: 16px; }
     .cards, .gaps-grid { grid-template-columns: 1fr; }
     .tabs { padding: 0 16px; }
   }
@@ -95,8 +107,11 @@
 <body>
 
 <header>
-  <h1>DEC Summit 2026 — Rideshare Lookup</h1>
-  <p>San Diego · Nov 13–23, 2026 · Find your group, terminal, and travel companions</p>
+  <div class="header-bar"></div>
+  <div class="header-inner">
+    <h1>DEC Summit 2026 — Rideshare Lookup</h1>
+    <p>San Diego · Nov 13–23, 2026 · Find your group, terminal, and travel companions</p>
+  </div>
 </header>
 
 <div class="tabs">
@@ -246,7 +261,7 @@ function renderCards(query) {
     }).join('');
     const termDisplay = row.terminal || '<em style="color:#aaa">—</em>';
     const dtDisplay   = isTbc
-      ? `<span style="color:#E65100;font-weight:700;">${escapeHtml(row.datetime)}</span>`
+      ? `<span style="color:#9c3300;font-weight:700;">${escapeHtml(row.datetime)}</span>`
       : escapeHtml(row.datetime);
     return `
     <div class="card">
