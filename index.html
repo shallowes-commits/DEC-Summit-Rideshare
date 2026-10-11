@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEC Summit 2026 — Rideshare Lookup</title>
+<style>
+  :root {
+    --jazz-teal:    #00827F;
+    --jazz-dark:    #1A2B3C;
+    --jazz-light:   #F0F7F7;
+    --jazz-border:  #C8DCDB;
+    --arrival:      #1A7A4A;
+    --arrival-bg:   #E8F5EE;
+    --departure:    #7A3A1A;
+    --departure-bg: #F5EDE8;
+    --warn-bg:      #FFF8E1;
+    --warn-border:  #F9A825;
+    --err-bg:       #FDECEA;
+    --err-border:   #C62828;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, "Arial Narrow", sans-serif;
+    background: #f4f4f4;
+    color: var(--jazz-dark);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--jazz-dark);
+    color: #fff;
+    padding: 20px 32px 16px;
+    border-bottom: 4px solid var(--jazz-teal);
+  }
+  header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.02em; }
+  header p  { font-size: 0.85rem; color: #aac8c7; margin-top: 4px; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    background: #fff;
+    border-bottom: 2px solid var(--jazz-border);
+    padding: 0 32px;
+  }
+  .tab-btn {
+    padding: 12px 20px;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn:hover { color: var(--jazz-teal); }
+  .tab-btn.active { color: var(--jazz-teal); border-bottom-color: var(--jazz-teal); }
+  .tab-badge {
+    display: inline-block;
+    background: var(--err-border);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Search panel ── */
+  .search-section {
+    background: #fff;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--jazz-border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .search-section label { font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
+  #nameSearch {
+    flex: 1; min-width: 220px; max-width: 400px;
+    padding: 10px 14px;
+    border: 2px solid var(--jazz-border);
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: Arial, sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #nameSearch:focus { border-color: var(--jazz-teal); }
+  .hint { font-size: 0.8rem; color: #777; }
+  #clearBtn {
+    padding: 10px 18px;
+    background: var(--jazz-teal);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #clearBtn:hover { background: #006461; }
+
+  main { padding: 24px 32px; }
+  #resultsLabel { font-size: 0.85rem; color: #555; margin-bottom: 16px; }
+
+  /* ── Cards ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--jazz-border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px; gap: 12px;
+  }
+  .card-header.arrival   { background: var(--arrival-bg);   border-bottom: 3px solid var(--arrival); }
+  .card-header.departure { background: var(--departure-bg); border-bottom: 3px solid var(--departure); }
+  .direction-badge {
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px;
+  }
+  .arrival   .direction-badge { background: var(--arrival);   color: #fff; }
+  .departure .direction-badge { background: var(--departure); color: #fff; }
+  .group-id   { font-size: 0.75rem; font-weight: 700; color: #999; letter-spacing: 0.05em; }
+  .airport-badge { font-size: 1.1rem; font-weight: 700; color: var(--jazz-dark); }
+  .card-body { padding: 14px 16px; }
+  .card-row {
+    display: flex; align-items: flex-start;
+    gap: 10px; margin-bottom: 10px; font-size: 0.88rem;
+  }
+  .card-row:last-child { margin-bottom: 0; }
+  .card-icon  { font-size: 1rem; flex-shrink: 0; width: 20px; text-align: center; margin-top: 1px; }
+  .card-label { font-weight: 700; color: #555; min-width: 72px; flex-shrink: 0; }
+  .card-value { color: var(--jazz-dark); line-height: 1.4; }
+  .terminal-value { font-size: 1.05rem; font-weight: 700; color: var(--jazz-teal); }
+  .travelers-list { line-height: 1.6; }
+  .traveler-name {
+    display: inline-block;
+    padding: 1px 6px; border-radius: 3px;
+    margin: 1px 2px 1px 0; font-size: 0.82rem;
+  }
+  .traveler-name.highlight {
+    background: #FFF176; font-weight: 700; color: #333;
+    outline: 2px solid #F9A825;
+  }
+
+  /* ── Gaps panel ── */
+  #panel-gaps main { padding: 24px 32px; }
+  .gaps-intro {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  .gaps-intro strong { color: #7A5A00; }
+
+  .gaps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .gap-section h3 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px 6px 0 0;
+    margin-bottom: 0;
+  }
+  .gap-section.arrival-only h3   { background: var(--arrival); }
+  .gap-section.departure-only h3 { background: var(--departure); }
+
+  .gap-list {
+    background: #fff;
+    border: 1px solid var(--jazz-border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+  }
+  .gap-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.88rem;
+  }
+  .gap-row:last-child { border-bottom: none; }
+  .gap-row .name { flex: 1; font-weight: 600; }
+  .gap-missing {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .arrival-only   .gap-missing { background: var(--err-bg);   color: var(--err-border);  border: 1px solid var(--err-border); }
+  .departure-only .gap-missing { background: var(--err-bg);   color: var(--err-border);  border: 1px solid var(--err-border); }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: #999;
+    grid-column: 1 / -1;
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 1rem; }
+
+  @media (max-width: 600px) {
+    header, .search-section, main, #panel-gaps main { padding: 16px; }
+    .cards, .gaps-grid { grid-template-columns: 1fr; }
+    .tabs { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DEC Summit 2026 — Rideshare Lookup</h1>
+  <p>San Diego · Nov 14–21, 2026 · Find your group, terminal, and travel companions</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('lookup')">🔍 Name Lookup</button>
+  <button class="tab-btn" onclick="showTab('gaps')">⚠️ Coverage Gaps <span class="tab-badge" id="gapsBadge"></span></button>
+</div>
+
+<!-- ════════════════ TAB 1: LOOKUP ════════════════ -->
+<div id="panel-lookup" class="tab-panel active">
+  <div class="search-section">
+    <label for="nameSearch">Search your name:</label>
+    <input type="text" id="nameSearch" placeholder="e.g. Sam, Harris, Jones…" autocomplete="off" />
+    <button id="clearBtn" onclick="clearSearch()">Show All</button>
+    <span class="hint">Type any part of your name</span>
+  </div>
+  <main>
+    <div id="resultsLabel"></div>
+    <div class="cards" id="cardsContainer"></div>
+  </main>
+</div>
+
+<!-- ════════════════ TAB 2: GAPS ════════════════ -->
+<div id="panel-gaps" class="tab-panel">
+  <main>
+    <div class="gaps-intro">
+      <strong>How to read this:</strong> Everyone should have at least one arrival <em>and</em> one departure in the rideshare list.
+      People listed here appear in only one direction — they may be arranging their own transport, or their entry may still be missing.
+    </div>
+    <div class="gaps-grid" id="gapsContainer"></div>
+  </main>
+</div>
+
+<script>
+const DATA = [
+  { id:"CLD-A01",    airport:"CLD", direction:"Arrival",   datetime:"Mon, Nov 16 · 12:54 PM – 1:00 PM",       terminal:"",           travelers:"Amy Williams, Praveen Tavargeri" },
+  { id:"LAX-A01",    airport:"LAX", direction:"Arrival",   datetime:"Mon, Nov 16 · 2:10 PM",                   terminal:"Terminal 2", travelers:"Phillip Starling, Mohamed Rizwan, Ali Shaik" },
+  { id:"LAX-A02",    airport:"LAX", direction:"Arrival",   datetime:"Sat, Nov 14 · 3:10 PM",                   terminal:"Terminal 4", travelers:"Alan Booth, Paul Smith, Nathan Gillespie, Jason Gillespie, Bob Broadbridge, Adam Stone, Dale Gilbert, Julian Papandrea, Alan Bunn, Chris Stone" },
+  { id:"SAN-A LT01", airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 10:31 AM",                  terminal:"Terminal 2", travelers:"Kelli Pircio, Christine Day" },
+  { id:"SAN-A LT02", airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 11:28 AM",                  terminal:"Terminal 2", travelers:"Matt Lasmanis, Laura Longstreth" },
+  { id:"SAN-A01",    airport:"SAN", direction:"Arrival",   datetime:"Sun, Nov 15 · 12:56 PM – 1:25 PM",        terminal:"Terminal 1", travelers:"Mary Quinones, Sathya Rajappa" },
+  { id:"SAN-A02",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 1:05 PM – 1:30 PM",         terminal:"Terminal 1", travelers:"Marc Uy, Charles Parra, Becky Van Den Honert" },
+  { id:"SAN-A03",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 1:40 PM – 2:10 PM",         terminal:"Terminal 1", travelers:"Shana Bergman, Samir Dhir, Shravan Dasari" },
+  { id:"SAN-A04",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 3:05 PM",                   terminal:"Terminal 1", travelers:"Ashwin Macharla, Charanjeet Singh" },
+  { id:"SAN-A05",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 5:30 PM",                   terminal:"Terminal 1", travelers:"Sreejith Ramachandran, Srinivas Chittala" },
+  { id:"SAN-A06",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 6:15 PM – 6:45 PM",         terminal:"Terminal 1", travelers:"Suhas Thakur, Nirali Shah, Shwetabh Suman, Naveen Bobbili, Venkat Vutukuri" },
+  { id:"SAN-A07",    airport:"SAN", direction:"Arrival",   datetime:"Sat, Nov 14 · 4:10 PM",                   terminal:"Terminal 2", travelers:"Sam Hallowes, Simona Governato Greggio, Alberto Blanco Ruiz, Simon Frost" },
+  { id:"SAN-A08",    airport:"SAN", direction:"Arrival",   datetime:"Sun, Nov 15 · 11:12 AM – 11:38 AM",       terminal:"Terminal 2", travelers:"Deva Content, Catrina Jones" },
+  { id:"SAN-A09",    airport:"SAN", direction:"Arrival",   datetime:"Sun, Nov 15 · 4:10 PM – 4:33 PM",         terminal:"Terminal 2", travelers:"Dean Harris, Julnette Torres" },
+  { id:"SAN-A10",    airport:"SAN", direction:"Arrival",   datetime:"Sun, Nov 15 · 9:32 PM – 9:40 PM",         terminal:"Terminal 2", travelers:"Briege Ibanez, Adrian Horne" },
+  { id:"SAN-A11",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 10:34 AM – 11:00 AM",       terminal:"Terminal 2", travelers:"Keith Linhares, David Jackson" },
+  { id:"SAN-A12",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 11:12 AM – 11:28 AM",       terminal:"Terminal 2", travelers:"Betty Pierce" },
+  { id:"SAN-A13",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 11:57 AM – 12:12 PM",       terminal:"Terminal 2", travelers:"Rachael DePasquale, Aishwarya Hemanth, Michael Kennedy" },
+  { id:"SAN-A14",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 1:45 PM – 1:47 PM",         terminal:"Terminal 2", travelers:"Shivani Desai, John Edwards, Ting Ting Lo" },
+  { id:"SAN-A15",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 4:10 PM – 4:22 PM",         terminal:"Terminal 2", travelers:"Tracy Kemp, Les Anastasiou, Vishal Vermani, Michelle Tran" },
+  { id:"SAN-A16",    airport:"SAN", direction:"Arrival",   datetime:"Mon, Nov 16 · 7:00 PM – 7:29 PM",         terminal:"Terminal 2", travelers:"Lavanya Mummadi, Ketaki Rahalkar, Dan Waldron, Nicole Benedetto" },
+  { id:"LAX-D01",    airport:"LAX", direction:"Departure", datetime:"Thu, Nov 19 · 5:10 PM",                   terminal:"Terminal 2", travelers:"Lewis Fairbairn, Phillip Starling, Frankie Martin" },
+  { id:"LAX-D02",    airport:"LAX", direction:"Departure", datetime:"Sat, Nov 21 · 4:55 PM",                   terminal:"Terminal 4", travelers:"Julian Papandrea, Alan Bunn, Chris Stone, Amy Williams" },
+  { id:"LAX-D03",    airport:"LAX", direction:"Departure", datetime:"Sat, Nov 21 · 6:30 PM",                   terminal:"Terminal 4", travelers:"Alan Booth, Paul Smith, Jason Gillespie" },
+  { id:"SAN-D01",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 5:00 PM – 5:05 PM",         terminal:"Terminal 1", travelers:"Bhaskar Nunna, Marc Uy, Charles Parra" },
+  { id:"SAN-D02",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 5:50 PM – 6:30 PM",         terminal:"Terminal 1", travelers:"Padmaja Gade, Shravan Dasari, Arvind Reddy Bheemreddy, Venkat Vutukuri, Samir Dhir, Shwetabh Suman, Kenny Low, Naveen Bobbili" },
+  { id:"SAN-D03",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 6:50 PM",                   terminal:"Terminal 1", travelers:"Srinivas Chittala, Bill Shieh" },
+  { id:"SAN-D04",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 8:55 PM – 9:35 PM",         terminal:"Terminal 1", travelers:"Mary Quinones, Ashwin Macharla" },
+  { id:"SAN-D05",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 5:01 PM – 5:24 PM",         terminal:"Terminal 2", travelers:"Rob Rhoads, Jake Alme, Sheryl Forcier, Debby Chen" },
+  { id:"SAN-D06",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 5:51 PM – 6:26 PM",         terminal:"Terminal 2", travelers:"Deva Content, Michael Kennedy, Nirali Shah, Dean Harris, Aishwarya Hemanth, Rachael DePasquale" },
+  { id:"SAN-D07",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 6:35 PM",                   terminal:"Terminal 2", travelers:"Ting Ting Lo, Michelle Tran" },
+  { id:"SAN-D08",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 7:35 PM – 8:12 PM",         terminal:"Terminal 2", travelers:"Laura Longstreth, Vishal Vermani" },
+  { id:"SAN-D09",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 9:07 PM – 9:25 PM",         terminal:"Terminal 2", travelers:"Keith Linhares, Nicole Benedetto" },
+  { id:"SAN-D10",    airport:"SAN", direction:"Departure", datetime:"Thu, Nov 19 · 10:17 PM – 10:30 PM",       terminal:"Terminal 2", travelers:"Beibhinn O'Donoghue, John Edwards, Patrick Shannon, Christine Day, Kelli Pircio" },
+  { id:"SAN-D11",    airport:"SAN", direction:"Departure", datetime:"Fri, Nov 20 · 9:18 AM – 9:23 AM",         terminal:"Terminal 2", travelers:"Briege Ibanez, Adrian Horne, Dan Waldron" },
+  { id:"SAN-D12",    airport:"SAN", direction:"Departure", datetime:"Fri, Nov 20 · 2:33 PM – 3:00 PM",         terminal:"Terminal 2", travelers:"Catrina Jones, Lavanya Mummadi" },
+  { id:"SAN-D13",    airport:"SAN", direction:"Departure", datetime:"Fri, Nov 20 · 6:59 PM – 7:35 PM",         terminal:"Terminal 2", travelers:"Julnette Torres, David Jackson" },
+  { id:"SAN-D14",    airport:"SAN", direction:"Departure", datetime:"Sat, Nov 21 · 6:00 PM",                   terminal:"Terminal 2", travelers:"Sam Hallowes, Alberto Blanco Ruiz, Simon Frost, Simona Governato Greggio" },
+  { id:"SAN-D15",    airport:"SAN", direction:"Departure", datetime:"Mon, Nov 23 · 6:00 PM",                   terminal:"Terminal 2", travelers:"Tracy Kemp, Les Anastasiou" }
+];
+
+// ── Build name → direction set map ──
+const nameDir = {};
+DATA.forEach(row => {
+  row.travelers.split(',').map(n => n.trim()).filter(Boolean).forEach(name => {
+    if (!nameDir[name]) nameDir[name] = new Set();
+    nameDir[name].add(row.direction);
+  });
+});
+
+const arrivalOnly   = Object.keys(nameDir).filter(n => nameDir[n].has('Arrival')   && !nameDir[n].has('Departure')).sort();
+const departureOnly = Object.keys(nameDir).filter(n => nameDir[n].has('Departure') && !nameDir[n].has('Arrival')).sort();
+const gapCount = arrivalOnly.length + departureOnly.length;
+
+document.getElementById('gapsBadge').textContent = gapCount;
+
+// ── Tabs ──
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── Helpers ──
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Lookup tab ──
+const container    = document.getElementById('cardsContainer');
+const resultsLabel = document.getElementById('resultsLabel');
+const searchInput  = document.getElementById('nameSearch');
+
+function renderCards(query) {
+  const q = query.trim().toLowerCase();
+  const filtered = q ? DATA.filter(r => r.travelers.toLowerCase().includes(q)) : DATA;
+
+  resultsLabel.textContent = q
+    ? `${filtered.length} group${filtered.length !== 1 ? 's' : ''} found for "${query.trim()}"`
+    : `Showing all ${DATA.length} ride groups`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>No groups found matching "<strong>${escapeHtml(query.trim())}</strong>".<br>Try a first name, last name, or partial name.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(row => {
+    const dirClass = row.direction.toLowerCase();
+    const dirIcon  = row.direction === 'Arrival' ? '🛬' : '🛫';
+    const travelerHtml = row.travelers.split(',').map(n => {
+      n = n.trim();
+      const isMatch = q && n.toLowerCase().includes(q);
+      return `<span class="traveler-name${isMatch ? ' highlight' : ''}">${escapeHtml(n)}</span>`;
+    }).join('');
+    const terminalDisplay = row.terminal || '<em style="color:#aaa">—</em>';
+    return `
+    <div class="card">
+      <div class="card-header ${dirClass}">
+        <span class="airport-badge">${escapeHtml(row.airport)}</span>
+        <span class="direction-badge">${dirIcon} ${escapeHtml(row.direction)}</span>
+        <span class="group-id">${escapeHtml(row.id)}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-row">
+          <span class="card-icon">🕐</span>
+          <span class="card-label">When</span>
+          <span class="card-value">${escapeHtml(row.datetime)}</span>
+        </div>
+        <div class="card-row">
+          <span class="card-icon">🏢</span>
+          <span class="card-label">Terminal</span>
+          <span class="card-value terminal-value">${terminalDisplay}</span>
+        </div>
+        <div class="card-row">
+          <span class="card-icon">👥</span>
+          <span class="card-label">Travelers</span>
+          <span class="card-value travelers-list">${travelerHtml}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function clearSearch() {
+  searchInput.value = '';
+  renderCards('');
+  searchInput.focus();
+}
+
+searchInput.addEventListener('input', () => renderCards(searchInput.value));
+renderCards('');
+
+// ── Gaps tab ──
+function renderGaps() {
+  const gc = document.getElementById('gapsContainer');
+
+  function buildSection(names, cssClass, title, missingLabel) {
+    if (names.length === 0) return '';
+    const rows = names.map(name => `
+      <div class="gap-row">
+        <span class="name">${escapeHtml(name)}</span>
+        <span class="gap-missing">${missingLabel} missing</span>
+      </div>`).join('');
+    return `
+    <div class="gap-section ${cssClass}">
+      <h3>${title} (${names.length})</h3>
+      <div class="gap-list">${rows}</div>
+    </div>`;
+  }
+
+  gc.innerHTML =
+    buildSection(arrivalOnly,   'arrival-only',   '🛬 Arrival only — no departure recorded',  'Departure') +
+    buildSection(departureOnly, 'departure-only', '🛫 Departure only — no arrival recorded',   'Arrival');
+
+  if (gapCount === 0) {
+    gc.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>All travelers have both an arrival and a departure.</p></div>`;
+  }
+}
+
+renderGaps();
+</script>
+</body>
+</html>
